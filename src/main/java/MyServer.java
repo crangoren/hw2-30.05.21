@@ -15,6 +15,7 @@ public class MyServer {
 
 
 
+
     public MyServer() {
 
         try (ServerSocket server = new ServerSocket(ChatConstants.PORT)) {
@@ -42,6 +43,10 @@ public class MyServer {
     public AuthService getAuthService() {
         return authService;
     }
+
+//    public synchronized void newClient(String nick, String login, String pass) {
+//        clients.add()
+//    }
 
     public synchronized boolean isNickBusy(String nick) {
         return clients.stream().anyMatch(client -> client.getName().equals(nick));

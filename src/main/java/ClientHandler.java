@@ -7,8 +7,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class ClientHandler {
+
+
 
     private MyServer server;
     private Socket socket;
@@ -18,9 +21,14 @@ public class ClientHandler {
     private String name;
     private boolean isAuth = false;
 
+    private static final Logger logger = Logger.getLogger(ClientHandler.class.getName());
+
+
+
     public String getName() {
         return name;
     }
+
 
     public ClientHandler(MyServer server, Socket socket) {
 
@@ -52,7 +60,8 @@ public class ClientHandler {
         while (true) {
             String messageFromClient = inputStream.readUTF();
             System.out.println("от " + name + ": " + messageFromClient);
-            if (messageFromClient.equals(ChatConstants.STOP_WORD)) {
+
+             if (messageFromClient.equals(ChatConstants.STOP_WORD)) {
                 return;
             } else if (messageFromClient.startsWith(ChatConstants.SEND_TO_LIST)) {
                 String[] splittedStr = messageFromClient.split("\\s+");
@@ -97,6 +106,7 @@ public class ClientHandler {
                 if (nick.isPresent()) {
 
                     if (!server.isNickBusy(nick.get())) {
+
                         sendMsg(ChatConstants.AUTH_OK + " " + nick);
                         isAuth = true;
                         name = nick.get();
