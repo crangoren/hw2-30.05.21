@@ -1,7 +1,8 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -20,6 +21,11 @@ public class ClientHandler {
     private LocalDateTime connectTime = LocalDateTime.now();
     private String name;
     private boolean isAuth = false;
+    private static Connection connectionHistory;
+    private static Statement stmt;
+
+//    File history = new File("history.db");
+
 
     private static final Logger logger = Logger.getLogger(ClientHandler.class.getName());
 
@@ -42,7 +48,8 @@ public class ClientHandler {
                 try {
                     authentification();
                     readMessages();
-                } catch (IOException e) {
+//                    new Client();
+                } catch (IOException | SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
                 } finally {
                     closeConnection();
@@ -56,9 +63,13 @@ public class ClientHandler {
 
 
 
-    private void readMessages() throws IOException {
+    private synchronized void readMessages() throws IOException, SQLException, ClassNotFoundException {
+        DataBaseApp.connect();
         while (true) {
             String messageFromClient = inputStream.readUTF();
+
+            Client.writeHistory(messageFromClient); //вызов метода записи
+
             System.out.println("от " + name + ": " + messageFromClient);
 
              if (messageFromClient.equals(ChatConstants.STOP_WORD)) {
@@ -95,13 +106,14 @@ public class ClientHandler {
         }
     }
 
-    private void authentification() throws IOException {
+    private void authentification() throws IOException, SQLException {
 
 
         while (true) {
             String message = inputStream.readUTF();
             if (message.startsWith(ChatConstants.AUTH_COMMAND)) {
                 String[] parts = message.split("\\s+");
+
                 Optional<String> nick = server.getAuthService().getNickByLoginAndPass(parts[1], parts[2]);
                 if (nick.isPresent()) {
 
@@ -112,6 +124,8 @@ public class ClientHandler {
                         name = nick.get();
                         server.subscribe(this);
                         server.broadcastMessage(name + " вошел в чат");
+
+//                        DataBaseApp.createHistoryDB();
 
                         return;
                     } else {

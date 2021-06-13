@@ -115,7 +115,7 @@ public class BaseAuthService implements AuthService {
     private static void connect() throws SQLException {
         try {
             Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:authdb");
+            connection = DriverManager.getConnection("jdbc:sqlite:auth.db");
             stmt = connection.createStatement();
         } catch (Exception e) {
             e.printStackTrace();
