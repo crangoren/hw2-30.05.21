@@ -68,7 +68,7 @@ public class Client {
             file.createNewFile();
         }
         try (DataOutputStream dataOutputStream = new DataOutputStream(new FileOutputStream(file))) {
-            dataOutputStream.writeUTF(msg);
+            dataOutputStream.writeUTF("\n" + msg);
         }
     }
     public static synchronized void readHistory() {
