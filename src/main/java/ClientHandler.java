@@ -23,6 +23,7 @@ public class ClientHandler {
     private boolean isAuth = false;
     private static Connection connectionHistory;
     private static Statement stmt;
+    private HistoryWriter historyDB = new HistoryWriter();
 
 //    File history = new File("history.db");
 
@@ -48,7 +49,7 @@ public class ClientHandler {
                 try {
                     authentification();
                     readMessages();
-//                    new Client();
+                    new Client();
                 } catch (IOException | SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
                 } finally {
@@ -67,8 +68,8 @@ public class ClientHandler {
         DataBaseApp.connect();
         while (true) {
             String messageFromClient = inputStream.readUTF();
-
-            Client.writeHistory(messageFromClient); //вызов метода записи
+            historyDB.saveHistory(name, messageFromClient);
+//            Client.writeHistory(messageFromClient); //вызов метода записи
 
             System.out.println("от " + name + ": " + messageFromClient);
 
@@ -124,6 +125,19 @@ public class ClientHandler {
                         name = nick.get();
                         server.subscribe(this);
                         server.broadcastMessage(name + " вошел в чат");
+                        StringBuilder historyString = null;
+                        try {
+                            historyString = historyDB.getHistoryChat();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        if(historyString != null){
+                            String[] mass = historyString.toString().split("\n");
+                            for (int i = 0; i < mass.length; i++) {
+                                String[] partsMass = mass[i].split(" ", 2);
+                                sendMsg(partsMass[0] + partsMass[1]);
+                            }
+                        }
 
 //                        DataBaseApp.createHistoryDB();
 

@@ -34,7 +34,8 @@ public class MyServer {
                 System.out.println("Сервер ожидает подключения");
                 Socket socket = server.accept();
                 System.out.println("Клиент подключился");
-                Client.readHistory();
+
+ //               Client.readHistory();
                 new ClientHandler(this, socket);
 
             }
