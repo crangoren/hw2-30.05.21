@@ -1,6 +1,10 @@
-import java.io.IOException;
+import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -12,6 +16,9 @@ public class MyServer {
 
     private List<ClientHandler> clients;
     private AuthService authService;
+    private static Connection connectionHistory;
+    private static Statement stmt;
+
 
 
 
@@ -27,7 +34,10 @@ public class MyServer {
                 System.out.println("Сервер ожидает подключения");
                 Socket socket = server.accept();
                 System.out.println("Клиент подключился");
+
+ //               Client.readHistory();
                 new ClientHandler(this, socket);
+
             }
 
         } catch (IOException e) {
@@ -42,6 +52,10 @@ public class MyServer {
     public AuthService getAuthService() {
         return authService;
     }
+
+//    public synchronized void newClient(String nick, String login, String pass) {
+//        clients.add()
+//    }
 
     public synchronized boolean isNickBusy(String nick) {
         return clients.stream().anyMatch(client -> client.getName().equals(nick));

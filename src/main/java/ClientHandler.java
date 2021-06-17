@@ -1,14 +1,18 @@
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.net.Socket;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Logger;
 
 public class ClientHandler {
+
+
 
     private MyServer server;
     private Socket socket;
@@ -17,10 +21,21 @@ public class ClientHandler {
     private LocalDateTime connectTime = LocalDateTime.now();
     private String name;
     private boolean isAuth = false;
+    private static Connection connectionHistory;
+    private static Statement stmt;
+    private HistoryWriter historyDB = new HistoryWriter();
+
+//    File history = new File("history.db");
+
+
+    private static final Logger logger = Logger.getLogger(ClientHandler.class.getName());
+
+
 
     public String getName() {
         return name;
     }
+
 
     public ClientHandler(MyServer server, Socket socket) {
 
@@ -34,7 +49,8 @@ public class ClientHandler {
                 try {
                     authentification();
                     readMessages();
-                } catch (IOException e) {
+                    new Client();
+                } catch (IOException | SQLException | ClassNotFoundException e) {
                     e.printStackTrace();
                 } finally {
                     closeConnection();
@@ -48,11 +64,16 @@ public class ClientHandler {
 
 
 
-    private void readMessages() throws IOException {
+    private synchronized void readMessages() throws IOException, SQLException, ClassNotFoundException {
+        DataBaseApp.connect();
         while (true) {
             String messageFromClient = inputStream.readUTF();
+            historyDB.saveHistory(name, messageFromClient);
+//            Client.writeHistory(messageFromClient); //вызов метода записи
+
             System.out.println("от " + name + ": " + messageFromClient);
-            if (messageFromClient.equals(ChatConstants.STOP_WORD)) {
+
+             if (messageFromClient.equals(ChatConstants.STOP_WORD)) {
                 return;
             } else if (messageFromClient.startsWith(ChatConstants.SEND_TO_LIST)) {
                 String[] splittedStr = messageFromClient.split("\\s+");
@@ -86,22 +107,39 @@ public class ClientHandler {
         }
     }
 
-    private void authentification() throws IOException {
+    private void authentification() throws IOException, SQLException {
 
 
         while (true) {
             String message = inputStream.readUTF();
             if (message.startsWith(ChatConstants.AUTH_COMMAND)) {
                 String[] parts = message.split("\\s+");
+
                 Optional<String> nick = server.getAuthService().getNickByLoginAndPass(parts[1], parts[2]);
                 if (nick.isPresent()) {
 
                     if (!server.isNickBusy(nick.get())) {
+
                         sendMsg(ChatConstants.AUTH_OK + " " + nick);
                         isAuth = true;
                         name = nick.get();
                         server.subscribe(this);
                         server.broadcastMessage(name + " вошел в чат");
+                        StringBuilder historyString = null;
+                        try {
+                            historyString = historyDB.getHistoryChat();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                        if(historyString != null){
+                            String[] mass = historyString.toString().split("\n");
+                            for (int i = 0; i < mass.length; i++) {
+                                String[] partsMass = mass[i].split(" ", 2);
+                                sendMsg(partsMass[0] + partsMass[1]);
+                            }
+                        }
+
+//                        DataBaseApp.createHistoryDB();
 
                         return;
                     } else {
